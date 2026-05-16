@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Generierte Types — bewusst NICHT ignoriert, damit Frontends sie ohne npm install
+# direkt importieren können. Wird bei Bedarf via `npm run generate-types` neu erzeugt.
+# !src/types/api.ts

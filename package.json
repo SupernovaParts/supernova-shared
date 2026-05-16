@@ -1,0 +1,29 @@
+{
+  "name": "@supernova/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript types and utilities derived from supernova-api OpenAPI spec.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/api.ts"
+  },
+  "scripts": {
+    "generate-types": "openapi-typescript ./openapi.json -o ./src/types/api.ts",
+    "fetch-openapi": "node ./scripts/fetch-openapi.mjs",
+    "update": "npm run fetch-openapi && npm run generate-types",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.1",
+    "drizzle-zod": "^0.8.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "openapi-typescript": "^7.4.0",
+    "typescript": "^5.4.0"
+  }
+}
