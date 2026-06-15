@@ -844,13 +844,16 @@ export const gdtSymbolSchema = z.enum([
   'parallelism', // Parallelität ∥
   'perpendicularity', // Rechtwinkligkeit ⊥
   'angularity', // Winkligkeit ∠
-  'position', // Position ⊕
-  'concentricity', // Konzentrizität ⊚
-  'symmetry', // Symmetrie ⎯⎯⎯
-  'runout', // Rundlauf ↗
-  'total_runout', // Gesamtrundlauf ↗↗
-  'profile_line', // Linienprofil ⌒
-  'profile_surface', // Flächenprofil ⌓
+  'position', // Position ⊕ (Ortstoleranz)
+  'concentricity', // Konzentrizität ◎ (Ortstoleranz)
+  'coaxiality', // Koaxialität ◎ (Ortstoleranz)
+  'symmetry', // Symmetrie ⌯ (Ortstoleranz)
+  'runout', // Rundlauf ↗ (Lauftoleranz, radial)
+  'planlauf', // Planlauf ↗ (Lauftoleranz, axial)
+  'total_runout', // Gesamtrundlauf ⇗ (Lauftoleranz)
+  'total_planlauf', // Gesamtplanlauf ⇗ (Lauftoleranz)
+  'profile_line', // Linienprofil ⌒ (Formtoleranz)
+  'profile_surface', // Flächenprofil ⌓ (Formtoleranz)
 ]);
 export type GdtSymbol = z.infer<typeof gdtSymbolSchema>;
 
@@ -942,6 +945,52 @@ export const toleranceSchema = z.object({
   // Geometric tolerance (type === 'geometric')
   gdtSymbol: gdtSymbolSchema.optional(),
   gdtValue: z.number().optional(), // tolerance zone in mm
+  gdtDiameter: z.boolean().optional(), // Ø-Präfix vor dem Wert (zylindrische Toleranzzone, z.B. Geradheit auf Welle/Bohrung)
+  // Orientierungs-Bezug als Zusatz-Kästchen rechts im Rahmen (DIN ISO 1101):
+  //  - 'parallel'/'perpendicular' (∥ / ⊥) für Geradheit & Linien-/Flächenprofil auf eine Bezugsfläche
+  //  - 'normalArrow' (↗) für Rundheit/Zylindrizität = senkrecht zur Oberfläche/Mittellinie
+  gdtOrientationRef: z.object({
+    kind: z.enum(['parallel', 'perpendicular', 'normalArrow']),
+    datumLabel: z.string(),                 // "A", "B", …
+    datumSurfaceId: z.string().optional(),  // gewählte Bezugsfläche im 3D-Modell
+  }).optional(),
+  // Zonen-Modifier im WERT-Kästchen NACH der Zahl (z.B. "0,05 SZ"):
+  //  CZ = Combined Zone, SZ = Separated Zone (Ebenheit/Profil über mehrere Flächen)
+  gdtZone: z.enum(['CZ', 'SZ']).optional(),
+  // United Feature — ÜBER dem Rahmen (vor J↔K), nur Linien-/Flächenprofil
+  gdtUnitedFeature: z.boolean().optional(),
+  // „Abgegrenzt" J↔K: Toleranz gilt zwischen zwei Randpunkten J und K (über dem Rahmen).
+  // null/undefined => umlaufend (Kreis am Leader). Punkt-Koordinaten kommen aus dem 3D-Picking.
+  gdtAllAround: z.boolean().optional(),     // true = umlaufend (Kreissymbol am Leader)
+  gdtBetween: z.object({
+    fromLabel: z.string().default('J'),
+    toLabel: z.string().default('K'),
+    fromPoint: z.array(z.number()).optional(), // [x,y,z] auf dem Flächenrand
+    toPoint: z.array(z.number()).optional(),
+    // Zwischen-Wegpunkte (vom Kunden angeklickte Kantenelemente), die die Route J→K
+    // eindeutig festlegen, wenn es mehrere Wege gibt. In Reihenfolge von J nach K.
+    waypoints: z.array(z.array(z.number())).optional(),
+  }).optional(),
+  // Geradheit/Linienprofil beziehen sich auf eine LINIE/KANTE statt einer Fläche.
+  // surfaceId zeigt auf die Anker-Nachbarfläche; gdtLineEdgeId hält die gewählte Kante
+  // (für UI-Highlight, J/K-Einschränkung und spätere kanten-genaue Zeichnungs-Antragung).
+  gdtLineEdgeId: z.string().optional(),
+  // Einzelner Markierungspunkt (grüner Punkt) auf der Kante: Geradheit bzw. umlaufendes
+  // Linienprofil. Identifiziert die gemeinte Kante eindeutig für die Zeichnung. [x,y,z].
+  gdtElementPoint: z.array(z.number()).optional(),
+  // Umlaufendes (all-around) Linienprofil: die geschlossene Kontur, die der Kunde durch
+  // Anklicken einzelner Kanten aufgebaut hat. gdtAllAroundPoints ist die GEORDNETE,
+  // geschlossene Polylinie (letzter Punkt ~ erster Punkt) in ZENTRIERTEN Viewer-Koordinaten
+  // (STEP = Punkt + viewerCenter); gdtAllAroundEdgeIds die zugehörigen Kanten-IDs (Referenz).
+  // => Zeichnung: Umlaufend-Kreis am Leader (statt J/K), Kontur rot in zwei Ansichten.
+  gdtAllAroundPoints: z.array(z.array(z.number())).optional(),
+  gdtAllAroundEdgeIds: z.array(z.string()).optional(),
+  // Geradheit auf MEHREREN gerade aneinander liegenden (kollinearen) Kanten: die geordnete
+  // (offene) Polylinie der toleranzierten Linie in ZENTRIERTEN Viewer-Koordinaten (STEP =
+  // Punkt + viewerCenter) + zugehörige Kanten-IDs. J/K = die beiden Enden der Linie.
+  // => Zeichnung: alle Kanten rot markieren + J/K + Geradheits-Rahmen.
+  gdtElementLinePoints: z.array(z.array(z.number())).optional(),
+  gdtElementLineEdgeIds: z.array(z.string()).optional(),
   datumSurfaceId: z.string().optional(), // Reference surface (Bezugsfläche A)
   datumSurfaceName: z.string().optional(), // Name of datum surface
   datumSurfaceColor: z.string().optional(), // Hex color for datum in 3D (same as surface if reused)
