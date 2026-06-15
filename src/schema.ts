@@ -953,6 +953,7 @@ export const toleranceSchema = z.object({
     kind: z.enum(['parallel', 'perpendicular', 'normalArrow']),
     datumLabel: z.string(),                 // "A", "B", …
     datumSurfaceId: z.string().optional(),  // gewählte Bezugsfläche im 3D-Modell
+    datumSurfaceColor: z.string().optional(), // Farbe der Bezugsfläche (für Legende/Hologramm)
   }).optional(),
   // Zonen-Modifier im WERT-Kästchen NACH der Zahl (z.B. "0,05 SZ"):
   //  CZ = Combined Zone, SZ = Separated Zone (Ebenheit/Profil über mehrere Flächen)
