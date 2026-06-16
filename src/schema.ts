@@ -895,11 +895,17 @@ export const anodizingColorSchema = z.enum([
 export type AnodizingColor = z.infer<typeof anodizingColorSchema>;
 
 // Finishing option with details
+//
+// Geltungsbereich (scope) der Veredelung:
+//   'whole_part'        → ganzes Bauteil wird veredelt (Default, wie bisher).
+//   'specific_surfaces' → NUR die in surfaceIds gewählten Flächen werden veredelt ("nur diese").
+//   'except_surfaces'   → ALLE Flächen AUSSER den in surfaceIds gewählten werden veredelt ("alles außer").
+// In beiden Pick-Fällen ('specific_surfaces' / 'except_surfaces') hält surfaceIds die angeklickten Flächen.
 export const finishingOptionSchema = z.object({
   type: finishingTypeSchema,
   color: anodizingColorSchema.optional(),
   thickness: z.number().optional(),
-  scope: z.enum(['whole_part', 'specific_surfaces']).optional(),
+  scope: z.enum(['whole_part', 'specific_surfaces', 'except_surfaces']).optional(),
   surfaceIds: z.array(z.object({
     surfaceId: z.string(),
     surfaceName: z.string(),
