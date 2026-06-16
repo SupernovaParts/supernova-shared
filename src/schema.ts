@@ -1001,6 +1001,23 @@ export const toleranceSchema = z.object({
     surfaceName: z.string(),
     color: z.string().optional(),
   })).optional(),
+
+  // ── Bohrungsabstand (Mittelpunktabstand zweier Bohrungen) ──
+  // Eigene dimensional-Variante: der Nutzer wählt ZWEI zylindrische Flächen (Bohrungen);
+  // Nennmaß = 3D-Abstand der beiden Achsen-/Flächen-Mittelpunkte. Zusätzlich ±-Toleranz.
+  // Ist holeDistance gesetzt, ist diese dimensional-Toleranz ein Bohrungsabstand
+  // (type bleibt 'dimensional'). centerA/centerB sind in ZENTRIERTEN Viewer-Koordinaten
+  // (STEP = Punkt + viewerCenter, identisch zu J/K). nominalMm wird automatisch aus den
+  // Mittelpunkten berechnet, plusMinusMm gibt der Nutzer ein.
+  // => Zeichnung später: „50±0.03" mit Maßlinie zwischen den zwei Bohrungs-Mittelpunkten.
+  holeDistance: z.object({
+    faceA: z.string(),                                  // Face-ID Bohrung A
+    faceB: z.string(),                                  // Face-ID Bohrung B
+    centerA: z.tuple([z.number(), z.number(), z.number()]), // [x,y,z] Mittelpunkt A (zentriert)
+    centerB: z.tuple([z.number(), z.number(), z.number()]), // [x,y,z] Mittelpunkt B (zentriert)
+    nominalMm: z.number(),                              // automatisch berechneter Nennabstand
+    plusMinusMm: z.number(),                            // ±-Toleranz (z.B. 0.03)
+  }).optional(),
 });
 
 export type Tolerance = z.infer<typeof toleranceSchema>;
