@@ -1053,6 +1053,20 @@ export const toleranceSchema = z.object({
     nominalMm: z.number(),                              // automatisch berechneter Nennabstand
     plusMinusMm: z.number(),                            // ±-Toleranz (z.B. 0.03)
   }).optional(),
+
+  // Ist boltCircle gesetzt, ist diese dimensional-Toleranz ein LOCHKREISABSTAND
+  // (Teilkreisdurchmesser/PCD). Der Nutzer klickt die Bohrungen des Lochkreises an; durch
+  // deren Mittelpunkte wird ein Kreis gelegt → pcdMm = automatisch gefitteter PCD. Alle
+  // Koordinaten ZENTRIERT (STEP = Punkt + viewerCenter). center/normal = gefittete Kreis-
+  // ebene. => Zeichnung: Teilkreis (gestrichelt) + „ØPCD±tol".
+  boltCircle: z.object({
+    faceIds: z.array(z.string()),                       // Face-IDs der Bohrungen (≥3)
+    centers: z.array(z.tuple([z.number(), z.number(), z.number()])), // Mittelpunkte (zentriert)
+    center: z.tuple([z.number(), z.number(), z.number()]),  // gefitteter Kreismittelpunkt
+    normal: z.tuple([z.number(), z.number(), z.number()]),  // Normale der Lochkreisebene
+    pcdMm: z.number(),                                  // Teilkreisdurchmesser (automatisch)
+    plusMinusMm: z.number(),                            // ±-Toleranz
+  }).optional(),
 });
 
 export type Tolerance = z.infer<typeof toleranceSchema>;
