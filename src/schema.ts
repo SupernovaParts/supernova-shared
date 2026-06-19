@@ -923,6 +923,20 @@ export const surfaceGeometrySchema = z.object({
 });
 export type SurfaceGeometry = z.infer<typeof surfaceGeometrySchema>;
 
+// Abgeleitete Mittelebene (median plane) für Symmetrie/Parallelität/Rechtwinkligkeit.
+// kind='two_faces' → faceIds = die beiden Flächen, point = Mittelpunkt dazwischen, normal =
+// Flächen-Normale (Ebene liegt mittig). kind='cylinder' → faceIds = [die Welle/Bohrung],
+// axis = Achsrichtung, point = Achsen-Mittelpunkt, normal = gewählte Mittelebenen-Normale
+// (eine der beiden ⟂ zur Achse). Alle Koordinaten ZENTRIERT (STEP = Punkt + viewerCenter).
+export const gdtMedianPlaneSchema = z.object({
+  kind: z.enum(['two_faces', 'cylinder']),
+  faceIds: z.array(z.string()),
+  point: z.tuple([z.number(), z.number(), z.number()]),
+  normal: z.tuple([z.number(), z.number(), z.number()]),
+  axis: z.tuple([z.number(), z.number(), z.number()]).optional(),
+});
+export type GdtMedianPlane = z.infer<typeof gdtMedianPlaneSchema>;
+
 export const toleranceSchema = z.object({
   surfaceId: z.string(),
   surfaceName: z.string(), // e.g., "Top Face", "Side 1" — bei Allgemeintoleranz/Allgemeinrauhigkeit Platzhalter
@@ -977,6 +991,9 @@ export const toleranceSchema = z.object({
     // Zwischen-Wegpunkte (vom Kunden angeklickte Kantenelemente), die die Route J→K
     // eindeutig festlegen, wenn es mehrere Wege gibt. In Reihenfolge von J nach K.
     waypoints: z.array(z.array(z.number())).optional(),
+    // Die GENAU angeklickten Kanten-IDs (J→K). Wie bei umlaufend: damit bleiben exakt
+    // die markierten Kanten markiert (kein berechneter Weg) — UI-Highlight + Referenz.
+    edgeIds: z.array(z.string()).optional(),
   }).optional(),
   // Geradheit/Linienprofil beziehen sich auf eine LINIE/KANTE statt einer Fläche.
   // surfaceId zeigt auf die Anker-Nachbarfläche; gdtLineEdgeId hält die gewählte Kante
@@ -998,6 +1015,18 @@ export const toleranceSchema = z.object({
   // => Zeichnung: alle Kanten rot markieren + J/K + Geradheits-Rahmen.
   gdtElementLinePoints: z.array(z.array(z.number())).optional(),
   gdtElementLineEdgeIds: z.array(z.string()).optional(),
+
+  // ── Abgeleitete MITTELEBENE / Mittellinie (median plane) ──
+  // Für Symmetrie/Parallelität/Rechtwinkligkeit: das tolerierte Element bzw. der Bezug ist
+  // KEINE reale Fläche, sondern eine abgeleitete Mittelebene. Sie entsteht entweder aus ZWEI
+  // (parallelen) Flächen — dann liegt die Mittelebene mittig dazwischen — ODER aus EINER
+  // Welle/Bohrung, die zwei Mittelebenen hat (eine davon wird gewählt). Alle Koordinaten in
+  // ZENTRIERTEN Viewer-Koords (STEP = Punkt + viewerCenter), Normale als Einheitsvektor.
+  // gdtMedianPlane = toleriertes Element, gdtDatumMedianPlane = Bezugs-Mittelebene (Buchstabe
+  // kommt zusätzlich über datumSurfaces/datumSurfaceName). => Zeichnung (Phase 2): rote
+  // Strichpunkt-Mittellinie + Rahmen-Leader darauf + Bemaßungs-Hilfslinien parallel zur Ebene.
+  gdtMedianPlane: gdtMedianPlaneSchema.optional(),
+  gdtDatumMedianPlane: gdtMedianPlaneSchema.optional(),
   datumSurfaceId: z.string().optional(), // Reference surface (Bezugsfläche A)
   datumSurfaceName: z.string().optional(), // Name of datum surface
   datumSurfaceColor: z.string().optional(), // Hex color for datum in 3D (same as surface if reused)
